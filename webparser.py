@@ -1,6 +1,7 @@
 from bs4 import BeautifulSoup
 from pymongo import MongoClient
 from crawler import connectDataBase
+import re
 
 db = connectDataBase()
 index = db.index
