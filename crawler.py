@@ -94,5 +94,5 @@ def crawlerThread(frontier, num_targets):
                 break
                 
         for link in parse(html):
-            absolute_link = urljoin(url, link)
+            absolute_link = urljoin(url, link.get('href')
             frontier.add_url(absolute_link)
