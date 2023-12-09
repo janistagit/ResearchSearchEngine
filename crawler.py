@@ -5,14 +5,14 @@ from bs4 import BeautifulSoup
 from pymongo import MongoClient
 import re
 
+# connect to mongoDB database
 def connectDataBase():
     client = MongoClient(host="localhost", port=27017)
     db = client.searchengine
     return db
 
-# Determine if URL follows faculty page pattern
 """
-Determines if target page is found
+Determines if target page is found based off faculty page pattern
 params: html (string)
 returns: Found(boolean)
 
@@ -48,3 +48,28 @@ def parse(html):
     bs = BeautifulSoup(html, 'html.parser')
     links = bs.find_all('a')
     return [link.get('href') for link in links]
+"""
+Frontier class for crawling based off Queue 
+"""
+class Frontier:
+    def __init__(self, seed_urls):
+        self.visited = set()            #keep track of visited pages
+        self.queue = list(seed_urls)    #implement queue
+
+    # add url to queue
+    def add_url(self, url):
+        if url not in self.visited:
+            self.queue.append(url)
+
+    # return next url in queue
+    def next_url(self):
+        return self.queue.pop(0) if self.queue else None
+
+    # No more links to visit
+    def done(self):
+        return len(self.queue) == 0
+        
+    #clear list once all targets found
+    def clear(self):
+        self.queue.clear()
+
