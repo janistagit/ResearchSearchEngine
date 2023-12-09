@@ -8,19 +8,22 @@ index = db.index
 
 # Text transformation/parsing code
 
-# Index management code
-def createDocument(col):
-    termCount = {}
+# Input: dictionary where {term : [docId, docId, docId, ...]}
+# docId comes from the collection of pages (each page is a document)
+def createIndexTerm(col, id, termDictionary):
+    # k is the key of the dictionary (term)
+    # v is the value of the dictionary (list of document IDs)
+    for k, v in termDictionary.items():
+        indexTerm = {
+            "_id" : id,
+            "termId" : k,
+            "docs" : v
+        }
 
-    document = {}
+        col.insert_one(indexTerm)
 
-    col.insert_one(document)
-
-def deleteDocument(col):
+def updateIndexTerm():
     pass
 
-def updateDocument(col):
-    pass
-
-def getIndex(col):
-    pass
+def deleteTerm(term):
+    index.delete_one({"termId": term})
