@@ -37,20 +37,14 @@ def is_target_page(html):
 def store_page(url, html):
     # Store page in MongoDB: url, html
     pages_collection.insert_one({'url': url, 'html': html})
-
-# Function to retrieve HTML content from URLs, Arg url(string), Returns HTML(string)
-def retrieve_url(url):
-    response = urlopen(url)
-    return response.read()
-
+                       
 # Function to grab URLs, Arg HTML, returns List of Urls(string list)
 def parse(html):
     bs = BeautifulSoup(html, 'html.parser')
-    links = bs.find_all('a')
-    return [link.get('href') for link in links]
-"""
-Frontier class for crawling based off Queue 
-"""
+    links = bs.find_all('a', href = True)
+    return links
+
+# Frontier class for crawling based off Queue 
 class Frontier:
     def __init__(self, seed_urls):
         self.visited = set()            #keep track of visited pages
@@ -72,4 +66,35 @@ class Frontier:
     #clear list once all targets found
     def clear(self):
         self.queue.clear()
+        
+def crawlerThread(frontier, num_targets):
+    targets_found = 0    
+    while not frontier.done():
+        url = frontier.next_url()
+        
+        try:
+            html = urlopen(url)
+            html = html.read()
+        except URLError as e:
+            print("Error server not found")
+            continue
+        except HTTPError as e:
+            print(e)
+            continue
+        except Exception as e:
+            print("Unknown Error")
+            continue
+        else:
+            store_page(url, html)
+            print('Crawling: ' + url)
 
+        # once we hit minimimum of num_targets(10-20) stop crawl
+        if is_target_page(html):
+            targets_found += 1
+            if targets_found == num_targets:
+                frontier.clear()
+                break
+                
+        for link in parse(html):
+            absolute_link = urljoin(url, link)
+            frontier.add_url(absolute_link)
