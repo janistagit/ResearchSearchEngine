@@ -16,7 +16,7 @@ def createIndexTerm(col, id, termDictionary):
     for k, v in termDictionary.items():
         indexTerm = {
             "_id" : id,
-            "termId" : k,
+            "term" : k,
             "docs" : v
         }
 
@@ -26,4 +26,4 @@ def updateIndexTerm():
     pass
 
 def deleteTerm(term):
-    index.delete_one({"termId": term})
+    index.delete_one({"term": term})
