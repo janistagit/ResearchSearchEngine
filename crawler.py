@@ -9,6 +9,7 @@ def connectDataBase():
     client = MongoClient(host="localhost", port=27017)
     db = client.searchengine
     return db
+
 # Determine if URL follows faculty page pattern
 """
 Determines if target page is found
@@ -30,3 +31,12 @@ def is_target_page(html):
         # If both elements exist, it's likely a target page
         return bool(faculty_name and faculty_title_dept)
     return False
+# Function to retrieve and store page in MongoDB
+def store_page(url, html):
+    # Store page in MongoDB: url, html
+    pages_collection.insert_one({'url': url, 'html': html})
+
+# Function to retrieve HTML content from URLs
+def retrieve_url(url):
+    response = urlopen(url)
+    return response.read()
