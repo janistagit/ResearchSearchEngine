@@ -15,9 +15,7 @@ def connectDataBase():
 Determines if target page is found based off faculty page pattern
 params: html (string)
 returns: Found(boolean)
-
 """
-
 def is_target_page(html):
     bs = BeautifulSoup(html, 'html.parser')
     
