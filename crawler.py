@@ -42,7 +42,7 @@ def parse(html):
     links = bs.find_all('a', href = True)
     return links
 
-# Frontier class for crawling based off Queue 
+# Frontier class for crawling based off Queue , seed_urls must be list type even if one object
 class Frontier:
     def __init__(self, seed_urls):
         self.visited = set()            #keep track of visited pages
