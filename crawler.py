@@ -20,7 +20,7 @@ def is_target_page(html):
     bs = BeautifulSoup(html, 'html.parser')
     
     # Check if the HTML contains the 'fac-info' division which indicates a faculty member's page
-    faculty_info = soup.find('div', class_='fac-info')
+    faculty_info = bs.find('div', class_='fac-info')
     
     # Check if within 'fac-info', there's an 'h1' tag for the faculty name, 
     # and 'title-dept' class within a 'span' for the faculty title and department
