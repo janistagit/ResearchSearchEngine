@@ -17,6 +17,7 @@ params: html (string)
 returns: Found(boolean)
 
 """
+
 def is_target_page(html):
     bs = BeautifulSoup(html, 'html.parser')
     
@@ -31,12 +32,19 @@ def is_target_page(html):
         # If both elements exist, it's likely a target page
         return bool(faculty_name and faculty_title_dept)
     return False
+    
 # Function to retrieve and store page in MongoDB
 def store_page(url, html):
     # Store page in MongoDB: url, html
     pages_collection.insert_one({'url': url, 'html': html})
 
-# Function to retrieve HTML content from URLs
+# Function to retrieve HTML content from URLs, Arg url(string), Returns HTML(string)
 def retrieve_url(url):
     response = urlopen(url)
     return response.read()
+
+# Function to grab URLs, Arg HTML, returns List of Urls(string list)
+def parse(html):
+    bs = BeautifulSoup(html, 'html.parser')
+    links = bs.find_all('a')
+    return [link.get('href') for link in links]
