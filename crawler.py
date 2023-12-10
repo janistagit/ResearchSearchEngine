@@ -22,12 +22,13 @@ def is_target_page(html):
         return False
     bs = BeautifulSoup(html, 'html.parser')
     
-    if bs.find('div') == None:
+    if bs.find('div', class_='fac-info') == None:
         return False
-    title_comparison = bool(bs.find('div').find(string=re.compile('.*College of Business Administration.*')))
+    title_comparison = bool(bs.find('div', class_='fac-info').find('span', class_='title-dept').find(string=re.compile('.*College of Business Administration.*')))
     if title_comparison:
         print("Found \nTarget\n Page")
     return title_comparison
+    
     
 # Function to retrieve and store page in MongoDB
 def store_page(url, html):
