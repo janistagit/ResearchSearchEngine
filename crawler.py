@@ -6,7 +6,6 @@ from pymongo import MongoClient
 import re
 
 # MongoDB client setup
-
 def connectDataBase():
     client = MongoClient(host="localhost", port=27017)
     db = client.searchengine
@@ -68,12 +67,15 @@ class Frontier:
         
 def crawlerThread(frontier, num_targets):
     targets_found = 0    
+
     while not frontier.done():
         url = frontier.next_url()
+        
+        # Add URLS to visted set if not added (initial seed)
         if url not in frontier.visited:
             frontier.visited.add(url)
-
-        
+            
+        # OPEN URLS AND RAISE EXCEPTIONS
         try:
             html = urlopen(url)
             html = html.read()
@@ -89,30 +91,31 @@ def crawlerThread(frontier, num_targets):
         else:
             print('Crawling: ' + url)
 
-        # once we hit minimimum of num_targets(10-20) stop crawl
+        # Stop Crawl if minimimum of num_targets(10-20) is met
         if is_target_page(html):
             store_page(url, html)
-
             targets_found += 1
             if targets_found == num_targets:
                 frontier.clear()
                 break
-                
+
+        # Add links to queue from current page
         for link in parse(html):
             templink = link['href']
 
             if (re.match("^https://www.cpp.edu", templink) == None):
                 templink = "https://www.cpp.edu" + templink
             frontier.add_url(templink)
+
+# Initialize Database
 db = connectDataBase()
 pages_collection = db.pages
 
 # Seed URLs for each department
 seed_urls = ['https://www.cpp.edu/cba/international-business-marketing/index.shtml']
     
-
 # Number of target faculty pages to find (this will be department-specific)
-num_targets = 5  # Change this to the number of pages you expect to find for each department
+num_targets = 20
 
 # Initialize frontier with seed URLs
 frontier = Frontier(seed_urls)
@@ -120,5 +123,5 @@ frontier = Frontier(seed_urls)
 # Start crawling
 crawlerThread(frontier, num_targets)
 
-# Close the MongoDB client
+# Close the MongoDB client when done
 client.close()
