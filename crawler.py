@@ -6,7 +6,7 @@ from pymongo import MongoClient
 import re
 
 # MongoDB client setup
-client = pymongo.MongoClient("mongodb://localhost:27017/")
+client = MongoClient("mongodb://localhost:27017/")
 db = client['searchengine']
 pages_collection = db['pages']
 """
