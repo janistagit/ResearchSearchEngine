@@ -76,6 +76,8 @@ def crawlerThread(frontier, num_targets):
         try:
             html = urlopen(url)
             html = html.read()
+            html = html.decode(encoding="iso-8859-1")
+
         except HTTPError as e:
             print("error", url)
             continue
