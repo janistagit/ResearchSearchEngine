@@ -10,7 +10,6 @@ import re
 def connectDataBase():
     client = MongoClient(host="localhost", port=27017)
     db = client.searchengine
-    pages_collection = db.pages
     return db
 
 """
@@ -106,6 +105,8 @@ def crawlerThread(frontier, num_targets):
                 templink = "https://www.cpp.edu" + templink
             frontier.add_url(templink)
 db = connectDataBase()
+pages_collection = db.pages
+
 # Seed URLs for each department
 seed_urls = ['https://www.cpp.edu/cba/international-business-marketing/index.shtml']
     
