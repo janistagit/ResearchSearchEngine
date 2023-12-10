@@ -91,9 +91,7 @@ def crawlerThread(frontier, num_targets):
                 frontier.clear()
                 break
                 
-        for link in parse(html):
-            absolute_link = urljoin(url, link.get('href')
-            frontier.add_url(absolute_link)
+       
         for link in parse(html):
             if (re.match("^https://www.cpp.edu", link['href']) == None):
                 link = "https://www.cpp.edu/" + link['href']
