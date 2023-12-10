@@ -9,7 +9,7 @@ import re
 def connectDataBase():
     client = MongoClient(host="localhost", port=27017)
     db = client.searchengine
-    return db
+    return db, client
 
 """
 Determines if target page is found based off faculty page pattern "College of Business Administration"
@@ -24,8 +24,6 @@ def is_target_page(html):
     if bs.find('div', class_='fac-info') == None:
         return False
     title_comparison = bool(bs.find('div', class_='fac-info').find('span', class_='title-dept').find(string=re.compile('.*College of Business Administration.*')))
-    if title_comparison:
-        print("Found \nTarget\n Page")
     return title_comparison
     
     
@@ -58,7 +56,6 @@ class Frontier:
 
     # No more links to visit
     def done(self):
-        print("Queue: ", len(self.queue))
         return len(self.queue) == 0
         
     #clear list once all targets found
@@ -89,11 +86,11 @@ def crawlerThread(frontier, num_targets):
             print("Unknown Error",url)
             continue
         else:
-            print('Crawling: ' + url)
+            store_page(url, html)
+
+            
 
         # Stop Crawl if minimimum of num_targets(10-20) is met
-        store_page(url, html)
-
         if is_target_page(html):
             targets_found += 1
             if targets_found == num_targets:
@@ -109,7 +106,7 @@ def crawlerThread(frontier, num_targets):
             frontier.add_url(templink)
 
 # Initialize Database
-db = connectDataBase()
+db, client = connectDataBase()
 pages_collection = db.pages
 
 # Seed URLs for each department
@@ -126,3 +123,4 @@ crawlerThread(frontier, num_targets)
 
 # Close the MongoDB client when done
 client.close()
+
