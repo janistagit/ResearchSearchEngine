@@ -90,7 +90,7 @@ def crawlerThread(frontier, num_targets):
 
             
 
-        # Stop Crawl if minimimum of num_targets(10-20) is met
+        # Stop Crawl if minimimum of num_targets(10-22) is met
         if is_target_page(html):
             targets_found += 1
             if targets_found == num_targets:
@@ -113,7 +113,7 @@ pages_collection = db.pages
 seed_urls = ['https://www.cpp.edu/cba/international-business-marketing/index.shtml']
     
 # Number of target faculty pages to find (this will be department-specific)
-num_targets = 20
+num_targets = 22
 
 # Initialize frontier with seed URLs
 frontier = Frontier(seed_urls)
