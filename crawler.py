@@ -6,9 +6,13 @@ from pymongo import MongoClient
 import re
 
 # MongoDB client setup
-client = MongoClient("mongodb://localhost:27017/")
-db = client['searchengine']
-pages_collection = db['pages']
+
+def connectDataBase():
+    client = MongoClient(host="localhost", port=27017)
+    db = client.searchengine
+    pages_collection = db.pages
+    return db
+
 """
 Determines if target page is found based off faculty page pattern "College of Business Administration"
 params: html (string)
@@ -101,7 +105,7 @@ def crawlerThread(frontier, num_targets):
             if (re.match("^https://www.cpp.edu", templink) == None):
                 templink = "https://www.cpp.edu" + templink
             frontier.add_url(templink)
-
+db = connectDataBase()
 # Seed URLs for each department
 seed_urls = ['https://www.cpp.edu/cba/international-business-marketing/index.shtml']
     
