@@ -18,10 +18,12 @@ returns: Found(boolean)
 """
 
 def is_target_page(html):
-    # Create a BeautifulSoup object
+    if html == None:
+        return False
     bs = BeautifulSoup(html, 'html.parser')
     
-    # Find the 'title-dept' span
+    if bs.find('div') == None:
+        return False
     title_comparison = bool(bs.find('div').find(string=re.compile('.*College of Business Administration.*')))
     if title_comparison:
         print("Found \nTarget\n Page")
