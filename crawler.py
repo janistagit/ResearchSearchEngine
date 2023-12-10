@@ -5,12 +5,6 @@ from bs4 import BeautifulSoup
 from pymongo import MongoClient
 import re
 
-# connect to mongoDB database
-def connectDataBase():
-    client = MongoClient(host="localhost", port=27017)
-    db = client.searchengine
-    return db
-
 # MongoDB client setup
 client = pymongo.MongoClient("mongodb://localhost:27017/")
 db = client['searchengine']
