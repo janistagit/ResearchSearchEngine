@@ -11,12 +11,15 @@ def connectDataBase():
     db = client.searchengine
     return db
 
+# MongoDB client setup
+client = pymongo.MongoClient("mongodb://localhost:27017/")
+db = client['searchengine']
+pages_collection = db['pages']
 """
-Determines if target page is found based off faculty page pattern
+Determines if target page is found based off faculty page pattern "College of Business Administration"
 params: html (string)
 returns: Found(boolean)
 """
-
 def is_target_page(html):
     if html == None:
         return False
@@ -41,7 +44,7 @@ def parse(html):
     links = bs.find_all('a', href = True)
     return links
 
-# Frontier class for crawling based off Queue , seed_urls must be list type even if one object
+# Frontier class for crawling based off Queue 
 class Frontier:
     def __init__(self, seed_urls):
         self.visited = set()            #keep track of visited pages
@@ -51,6 +54,7 @@ class Frontier:
     def add_url(self, url):
         if url not in self.visited:
             self.queue.append(url)
+            self.visited.add(url)
 
     # return next url in queue
     def next_url(self):
@@ -58,6 +62,7 @@ class Frontier:
 
     # No more links to visit
     def done(self):
+        print("Queue: ", len(self.queue))
         return len(self.queue) == 0
         
     #clear list once all targets found
@@ -68,25 +73,29 @@ def crawlerThread(frontier, num_targets):
     targets_found = 0    
     while not frontier.done():
         url = frontier.next_url()
+        if url not in frontier.visited:
+            frontier.visited.add(url)
+
         
         try:
             html = urlopen(url)
             html = html.read()
-        except URLError as e:
-            print("Error server not found")
-            continue
         except HTTPError as e:
-            print(e)
+            print("error", url)
+            continue
+        except URLError as e:
+            print("Error server not found: ", url)
             continue
         except Exception as e:
-            print("Unknown Error")
+            print("Unknown Error",url)
             continue
         else:
-            store_page(url, html)
             print('Crawling: ' + url)
 
         # once we hit minimimum of num_targets(10-20) stop crawl
         if is_target_page(html):
+            store_page(url, html)
+
             targets_found += 1
             if targets_found == num_targets:
                 frontier.clear()
@@ -96,5 +105,21 @@ def crawlerThread(frontier, num_targets):
             templink = link['href']
 
             if (re.match("^https://www.cpp.edu", templink) == None):
-                templink = "https://www.cpp.edu/" + templink
+                templink = "https://www.cpp.edu" + templink
             frontier.add_url(templink)
+
+# Seed URLs for each department
+seed_urls = ['https://www.cpp.edu/cba/international-business-marketing/index.shtml']
+    
+
+# Number of target faculty pages to find (this will be department-specific)
+num_targets = 5  # Change this to the number of pages you expect to find for each department
+
+# Initialize frontier with seed URLs
+frontier = Frontier(seed_urls)
+
+# Start crawling
+crawlerThread(frontier, num_targets)
+
+# Close the MongoDB client
+client.close()
