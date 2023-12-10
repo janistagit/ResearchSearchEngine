@@ -79,13 +79,13 @@ def crawlerThread(frontier, num_targets):
             html = html.decode(encoding="iso-8859-1")
 
         except HTTPError as e:
-            print("error", url)
+            print("HTTP error")
             continue
         except URLError as e:
-            print("Error server not found: ", url)
+            print("Error server not found: ")
             continue
         except Exception as e:
-            print("Unknown Error",url)
+            print("Unknown Error")
             continue
         else:
             store_page(url, html)
