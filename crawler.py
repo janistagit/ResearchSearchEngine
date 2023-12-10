@@ -92,8 +92,9 @@ def crawlerThread(frontier, num_targets):
             print('Crawling: ' + url)
 
         # Stop Crawl if minimimum of num_targets(10-20) is met
+        store_page(url, html)
+
         if is_target_page(html):
-            store_page(url, html)
             targets_found += 1
             if targets_found == num_targets:
                 frontier.clear()
