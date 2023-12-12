@@ -82,9 +82,11 @@ allwords = list(set(word for doc in text for word in doc))
 
 for word in allwords:
     doclist = [] #list of documents where term is found
+    useddocs = [] #list of already accounted for documents
     for item in textwid:
-        if word in item[1]:  
-            doclist.append(item[0]) 
+        if word in item[1] and item[0] not in useddocs: 
+            doclist.append(item[0])
+            useddocs.append(item[0]) 
     
     termdict = {word: doclist} #function below takes in the third variable as a dict so we make one with word and doclist
     createIndexTerm(index,word, termdict)
