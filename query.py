@@ -1,58 +1,78 @@
-from crawler import connectDataBase
+from pymongo import MongoClient
+from bson import ObjectId
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
-from pymongo import MongoClient
+from bs4 import BeautifulSoup
+#from crawler import connectDataBase
 
-page_size = 5
+def connect_to_database():
+    client = MongoClient()
+    db = client.searchengine
+    return db
 
-# Connect to MongoDB
-client = MongoClient()
-db = client.business_department
-pages = db.Professor_information
+def search_index(query, indexes):
+    index_info = []
+    tfidf_vectorizer = TfidfVectorizer(analyzer='word', stop_words='english')
+    index_terms = list(indexes.find())
+    all_terms = [term['term'] for term in index_terms]
+    tfidf_vectorizer.fit(all_terms)
+    #print(tfidf_vectorizer.idf_)
 
-def search_faculty(query, faculty_data):
-    faculty_info = []
+    query_matrix = tfidf_vectorizer.fit_transform([query])
+    #print(query_matrix)
+    term_texts = [term['term'] for term in index_terms if term['term']]
+    term_matrix = tfidf_vectorizer.transform(term_texts)
+    print(term_matrix)
+    
+    for term, term_doc in zip(index_terms, term_matrix):
+        term_text = term['term']
+        if term_text:
+            similarity = cosine_similarity(query_matrix, term_doc).flatten()[0]
+            index_info.append({'term': term_text, 'similarity': similarity, 'docs': term['docs']})
 
-    for faculty in faculty_data:
-        curr = f"{faculty.get('Name', '')} {faculty.get('Title', '')} {faculty.get('About', '')} {faculty.get('Publications', '')} {faculty.get('Student Projects', '')} {faculty.get('Affiliations', '')} {faculty.get('Research Interests', '')} {faculty.get('IBM Courses Taught', '')} {faculty.get('Education', '')}"
-        faculty_info.append(curr)
+    index_info.sort(key=lambda x: x['similarity'], reverse=True)
+    doc_info_list = [(doc_id, similarity) for doc_info in index_info for doc_id in doc_info['docs'] for similarity in [doc_info['similarity']]]
+    return doc_info_list
 
-    tfidfvectorizer = TfidfVectorizer(analyzer='word', stop_words='english')
-    query_matrix = tfidfvectorizer.fit_transform([query])
-    faculty_matrix = tfidfvectorizer.transform(faculty_info)
-    cos_sim = cosine_similarity(query_matrix, faculty_matrix).flatten()
-    #print(cos_sim)
 
-    # sort by cosine similarity and create list of resulting pages
-    faculty_ranking = sorted(list(enumerate(cos_sim)), key=lambda x: x[1], reverse=True)
-    results = []
-    for i, similarity in faculty_ranking:
-        prof_info = faculty_data[i]
-        prof_info['cos_sim'] = similarity
-        results.append(prof_info)
 
-    return results
 
+def retrieve_documents(doc_info_list, pages_collection):
+    # grab the associated docs with the id
+    documents = list(pages_collection.find({'_id': {'$in': [ObjectId(doc_id) for doc_id, _ in doc_info_list]}}))
+    return zip(doc_info_list, documents)
 
 def pagination(results, page_size):
-    total_item_count = len(results)
+    result_list = list(results)
+
+    total_item_count = len(result_list)
     total_pages = (total_item_count + page_size - 1) // page_size
 
     while True:
         try:
-            page_number = int(input("Enter page number: "))
+            page_number = int(input("Enter page number or -1 to exit: "))
+
+            if page_number == -1:
+                break
+
             if 1 <= page_number <= total_pages:
                 start_index = (page_number - 1) * page_size
                 end_index = page_number * page_size
-                page_data = results[start_index:end_index]
-                for result in page_data:
-                    print(f"Cosine similarity: {result['cos_sim']}")
-                    print(f"Professor: {result['Name']}")
-                    print(f"Title: {result['Title']}")
-                    print(f"Email: {result['Email:']}")
-                    print(f"Phone: {result['Phone']}")
-                    print(f"Office: {result['Office']}")
-                    print("\n")
+                page_data = result_list[start_index:end_index]
+                print(f"Page: {page_number}")
+                for (doc_id, similarity), result in page_data:
+                    url = result.get('url')
+                    html_content = result.get('html', '')
+                    if html_content:
+                        soup = BeautifulSoup(html_content, 'html.parser')
+                        h1_tag = soup.find('h1')
+                        h1_text = h1_tag.get_text()
+                        print(f"URL: {url}")
+                        print(f"{h1_text}")
+                        print(f"Cosine Similarity: {similarity}")
+                        print("\n")
+                    else:
+                        print("No HTML content found.")
             else:
                 print("Not a valid page number. Please try again.")
                 print()
@@ -60,23 +80,10 @@ def pagination(results, page_size):
             print("Invalid Input. Please enter a valid number.")
             print()
 
-
-# search query and info
-query = "sales force"
-db_data = list(pages.find())
-results = search_faculty(query, db_data)
-
-pagination(results, page_size)
-
-
-#commented out just in case
-'''
-for result in results:
-    print(f"Cosine similarity: {result['cos_sim']}")
-    print(f"Professor: {result['Name']}")
-    print(f"Title: {result['Title']}")
-    print(f"Email: {result['Email:']}")
-    print(f"Phone: {result['Phone']}")
-    print(f"Office: {result['Office']}")
-    print("\n")
-'''
+query = input("Search query: ")
+#db, client = connectDataBase() makes it run crawler
+db = connect_to_database()
+doc_info_list = search_index(query, db.index)
+pages_collection = db.pages
+results = retrieve_documents(doc_info_list, pages_collection)
+pagination(results, page_size=5)
