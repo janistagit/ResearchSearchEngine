@@ -1,51 +1,77 @@
-from pymongo import MongoClient
 from bson import ObjectId
+from pymongo import MongoClient
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
-from bs4 import BeautifulSoup
-#from crawler import connectDataBase
 
-def connect_to_database():
-    client = MongoClient()
-    db = client.searchengine
-    return db
+def get_html_from_id(db, doc_id):
+    collection = db.pages
+    document = collection.find_one({"_id": doc_id})
+    return document['html'] if document else ''
 
-def search_index(query, indexes):
-    index_info = []
-    tfidf_vectorizer = TfidfVectorizer(analyzer='word', stop_words='english')
-    index_terms = list(indexes.find())
-    all_terms = [term['term'] for term in index_terms]
-    tfidf_vectorizer.fit(all_terms)
-    #print(tfidf_vectorizer.idf_)
+def get_docs(db, term):
+    collection = db.index
+    index_term = collection.find_one({"term": term})
+    return index_term['docs'] if index_term else []
 
-    query_matrix = tfidf_vectorizer.fit_transform([query])
-    #print(query_matrix)
-    term_texts = [term['term'] for term in index_terms if term['term']]
-    term_matrix = tfidf_vectorizer.transform(term_texts)
-    print(term_matrix)
-    
-    for term, term_doc in zip(index_terms, term_matrix):
-        term_text = term['term']
-        if term_text:
-            similarity = cosine_similarity(query_matrix, term_doc).flatten()[0]
-            index_info.append({'term': term_text, 'similarity': similarity, 'docs': term['docs']})
+def get_url_and_name(db, doc_id):
+    collection = db.pages
+    document = collection.find_one({"_id": doc_id})
+    return document['url'], document['html'].split('<h1>')[1].split('</h1>')[0] if document else None
 
-    index_info.sort(key=lambda x: x['similarity'], reverse=True)
-    doc_info_list = [(doc_id, similarity) for doc_info in index_info for doc_id in doc_info['docs'] for similarity in [doc_info['similarity']]]
-    return doc_info_list
+def get_doc_terms(db, doc_id):
+    doc_terms = []
+    docs = db.index.find({"docs": {"$elemMatch": {"$eq": ObjectId(doc_id)}}})
+    for doc in docs:
+        doc_terms.append(doc["term"])
+    return doc_terms
 
+def search_engine(query, db, page_size=5):
+    all_index_terms = []
+    # loop to get all terms
+    for term in query.split():
+        doc_ids = get_docs(db, term)
+        print(f"term: {term}, doc ids: {doc_ids}")
+        for doc_id in doc_ids:
+            terms_for_document = get_doc_terms(db, doc_id)
+            print(f"docId: {doc_id}, doc terms: {terms_for_document}")
+            all_index_terms.extend(terms_for_document)
 
+    if not all_index_terms:
+        print("No matching documents found.")
+        return
 
+    vectorizer = TfidfVectorizer()
+    try:
+        vectorizer.fit_transform([' '.join(all_index_terms)])
+    except ValueError:
+        print("Error during TF-IDF vectorization. Check your data.")
+        return
 
-def retrieve_documents(doc_info_list, pages_collection):
-    # grab the associated docs with the id
-    documents = list(pages_collection.find({'_id': {'$in': [ObjectId(doc_id) for doc_id, _ in doc_info_list]}}))
-    return zip(doc_info_list, documents)
+    query_vector = vectorizer.transform([query])
 
-def pagination(results, page_size):
-    result_list = list(results)
+    results = []
 
-    total_item_count = len(result_list)
+    # loop to calc similarities and append to results
+    for term in query.split():
+        doc_ids = get_docs(db, term)
+        print(f"Term: {term}, Document IDs: {doc_ids}")
+
+        # calc similarity for each doc
+        for doc_id in doc_ids:
+            terms_for_document = get_doc_terms(db, doc_id)
+            print(f"Document ID: {doc_id}, Associated Terms: {terms_for_document}")
+            document_vector = vectorizer.transform([' '.join(terms_for_document)])
+
+            # to output in results
+            url, name = get_url_and_name(db, doc_id)
+            if url and name:
+                cosine_sim = cosine_similarity(query_vector, document_vector).flatten()[0]
+                results.append((url, name, cosine_sim))
+
+    results.sort(key=lambda x: x[2], reverse=True)
+
+    # pagination for results
+    total_item_count = len(results)
     total_pages = (total_item_count + page_size - 1) // page_size
 
     while True:
@@ -58,21 +84,13 @@ def pagination(results, page_size):
             if 1 <= page_number <= total_pages:
                 start_index = (page_number - 1) * page_size
                 end_index = page_number * page_size
-                page_data = result_list[start_index:end_index]
+                page_data = results[start_index:end_index]
                 print(f"Page: {page_number}")
-                for (doc_id, similarity), result in page_data:
-                    url = result.get('url')
-                    html_content = result.get('html', '')
-                    if html_content:
-                        soup = BeautifulSoup(html_content, 'html.parser')
-                        h1_tag = soup.find('h1')
-                        h1_text = h1_tag.get_text()
-                        print(f"URL: {url}")
-                        print(f"{h1_text}")
-                        print(f"Cosine Similarity: {similarity}")
-                        print("\n")
-                    else:
-                        print("No HTML content found.")
+                for url, name, similarity in page_data:
+                    print(f"URL: {url}")
+                    print(f"{name}")
+                    print(f"Cosine Similarity: {similarity}")
+                    print("\n")
             else:
                 print("Not a valid page number. Please try again.")
                 print()
@@ -80,10 +98,7 @@ def pagination(results, page_size):
             print("Invalid Input. Please enter a valid number.")
             print()
 
+client = MongoClient()
+db = client.searchengine
 query = input("Search query: ")
-#db, client = connectDataBase() makes it run crawler
-db = connect_to_database()
-doc_info_list = search_index(query, db.index)
-pages_collection = db.pages
-results = retrieve_documents(doc_info_list, pages_collection)
-pagination(results, page_size=5)
+search_engine(query, db)
