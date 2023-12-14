@@ -30,10 +30,10 @@ def search_engine(query, db, page_size=5):
     # loop to get all terms
     for term in query.split():
         doc_ids = get_docs(db, term)
-        print(f"term: {term}, doc ids: {doc_ids}")
+        #print(f"term: {term}, doc ids: {doc_ids}")
         for doc_id in doc_ids:
             terms_for_document = get_doc_terms(db, doc_id)
-            print(f"docId: {doc_id}, doc terms: {terms_for_document}")
+            #print(f"docId: {doc_id}, doc terms: {terms_for_document}")
             all_index_terms.extend(terms_for_document)
 
     if not all_index_terms:
@@ -54,12 +54,12 @@ def search_engine(query, db, page_size=5):
     # loop to calc similarities and append to results
     for term in query.split():
         doc_ids = get_docs(db, term)
-        print(f"Term: {term}, Document IDs: {doc_ids}")
+        #print(f"Term: {term}, Document IDs: {doc_ids}")
 
         # calc similarity for each doc
         for doc_id in doc_ids:
             terms_for_document = get_doc_terms(db, doc_id)
-            print(f"Document ID: {doc_id}, Associated Terms: {terms_for_document}")
+            #print(f"Document ID: {doc_id}, Associated Terms: {terms_for_document}")
             document_vector = vectorizer.transform([' '.join(terms_for_document)])
 
             # to output in results
@@ -68,10 +68,16 @@ def search_engine(query, db, page_size=5):
                 cosine_sim = cosine_similarity(query_vector, document_vector).flatten()[0]
                 results.append((url, name, cosine_sim))
 
-    results.sort(key=lambda x: x[2], reverse=True)
+    profs = set()
+    processed_results = []
+    for url, name, similarity in results:
+        if name not in profs:
+            processed_results.append((url, name, cosine_sim))
+            profs.add(name)
+    processed_results.sort(key=lambda x: x[2], reverse=True)
 
     # pagination for results
-    total_item_count = len(results)
+    total_item_count = len(processed_results)
     total_pages = (total_item_count + page_size - 1) // page_size
 
     while True:
@@ -84,7 +90,7 @@ def search_engine(query, db, page_size=5):
             if 1 <= page_number <= total_pages:
                 start_index = (page_number - 1) * page_size
                 end_index = page_number * page_size
-                page_data = results[start_index:end_index]
+                page_data = processed_results[start_index:end_index]
                 print(f"Page: {page_number}")
                 for url, name, similarity in page_data:
                     print(f"URL: {url}")
