@@ -87,6 +87,7 @@ def search_engine(query, db, page_size=5):
     while True:
         try:
             page_number = int(input("Enter page number or -1 to exit: "))
+            print()
 
             if page_number == -1:
                 break
