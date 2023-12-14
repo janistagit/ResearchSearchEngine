@@ -38,56 +38,54 @@ def createIndexTerm(col, id, termDictionary):
 
         col.insert_one(indexTerm)
 
-def updateIndexTerm():
-    pass
-
 def deleteTerm(term):
     index.delete_one({"term": term})
 
 # Text transformation/parsing code  
 
-#queries the data base to find links that are need for this part
-query = {'url': {'$regex': "^https:\/\/www\.cpp\.edu\/faculty\/.*\/index\.shtml$"}}
+def textTransformation():
+    #queries the data base to find links that are need for this part
+    query = {'url': {'$regex': "^https:\/\/www\.cpp\.edu\/faculty\/.*\/index\.shtml$"}}
 
-links = list(pagecollection.find(query))
-#lists to hold words and ids
-text = []
-textwid = []
-#stemming and stopping
-swords = set(stopwords.words('english'))
-lemmatizer = WordNetLemmatizer()
-#looping through the links we found in the query and getting the html and extracting text
-#text is then processed and cleaned from things we dont want: text transformation begins
-for link in links:
-    docid = link['_id']
-    html = link['html']
-    bs = BeautifulSoup(html, 'html.parser')
-    diva = bs.find_all('div', class_= 'accolades')
-    for div in diva:
-        t = div.get_text().replace('Â', '').replace(u'\xa0', '').replace('\n', ' ').replace('\t', '')
-        cleantxt = re.sub(r'https?://[^\s,]+', '', t)
-        cleantxt = re.sub(r'\b\w{3,}\.', lambda match: match.group(0)[:-1], cleantxt)  
-        cleantxt = re.sub(r'[a-z]{1,2}\.$', '', cleantxt)
-        cleantxt = re.sub(r'(?<!\w)-|-(?!\w)', '', cleantxt)
-        cleantxt = re.sub(r'[“”"(),*:&]', '', cleantxt)
-        cleantxt = cleantxt.split()
-        cleantxt = [word.lower() for word in cleantxt if word.lower() not in swords]  
-        cleantxt = [lemmatizer.lemmatize(word) for word in cleantxt]
-        text.append(cleantxt)
-        textwid.append([docid]+[cleantxt])
+    links = list(pagecollection.find(query))
+    #lists to hold words and ids
+    text = []
+    textwid = []
+    #stemming and stopping
+    swords = set(stopwords.words('english'))
+    lemmatizer = WordNetLemmatizer()
+    #looping through the links we found in the query and getting the html and extracting text
+    #text is then processed and cleaned from things we dont want: text transformation begins
+    for link in links:
+        docid = link['_id']
+        html = link['html']
+        bs = BeautifulSoup(html, 'html.parser')
+        diva = bs.find_all('div', class_= 'accolades')
+        for div in diva:
+            t = div.get_text().replace('Â', '').replace(u'\xa0', '').replace('\n', ' ').replace('\t', '')
+            cleantxt = re.sub(r'https?://[^\s,]+', '', t)
+            cleantxt = re.sub(r'\b\w{3,}\.', lambda match: match.group(0)[:-1], cleantxt)  
+            cleantxt = re.sub(r'[a-z]{1,2}\.$', '', cleantxt)
+            cleantxt = re.sub(r'(?<!\w)-|-(?!\w)', '', cleantxt)
+            cleantxt = re.sub(r'[“”"(),*:&]', '', cleantxt)
+            cleantxt = cleantxt.split()
+            cleantxt = [word.lower() for word in cleantxt if word.lower() not in swords]  
+            cleantxt = [lemmatizer.lemmatize(word) for word in cleantxt]
+            text.append(cleantxt)
+            textwid.append([docid]+[cleantxt])
 
-#print(textwid) | checking
-allwords = list(set(word for doc in text for word in doc))
-# print("all in one list:") | checking
+    #print(textwid) | checking
+    allwords = list(set(word for doc in text for word in doc))
+    # print("all in one list:") | checking
 
-for word in allwords:
-    doclist = [] #list of documents where term is found
-    useddocs = [] #list of already accounted for documents
-    for item in textwid:
-        if word in item[1] and item[0] not in useddocs: 
-            doclist.append(item[0])
-            useddocs.append(item[0]) 
-    
-    termdict = {word: doclist} #function below takes in the third variable as a dict so we make one with word and doclist
-    createIndexTerm(index,word, termdict)
+    for word in allwords:
+        doclist = [] #list of documents where term is found
+        useddocs = [] #list of already accounted for documents
+        for item in textwid:
+            if word in item[1] and item[0] not in useddocs: 
+                doclist.append(item[0])
+                useddocs.append(item[0]) 
+        
+        termdict = {word: doclist} #function below takes in the third variable as a dict so we make one with word and doclist
+        createIndexTerm(index,word, termdict)
 
