@@ -16,7 +16,11 @@ def get_docs(db, term):
 def get_url_and_name(db, doc_id):
     collection = db.pages
     document = collection.find_one({"_id": doc_id})
-    return document['url'], document['html'].split('<h1>')[1].split('</h1>')[0] if document else None
+    url = document['url']
+    html = document['html']
+    title = html.split('<em>')[1].split('</em>')[0] if '<em>' in html else ''
+    name = html.split('<h1>')[1].split('</h1>')[0] if '<h1>' in html else ''
+    return url, name, title
 
 def get_doc_terms(db, doc_id):
     doc_terms = []
@@ -63,18 +67,18 @@ def search_engine(query, db, page_size=5):
             document_vector = vectorizer.transform([' '.join(terms_for_document)])
 
             # to output in results
-            url, name = get_url_and_name(db, doc_id)
-            if url and name:
+            url, name, title = get_url_and_name(db, doc_id)
+            if url and name and title:
                 cosine_sim = cosine_similarity(query_vector, document_vector).flatten()[0]
-                results.append((url, name, cosine_sim))
+                results.append((url, name, title, cosine_sim))
 
     profs = set()
     processed_results = []
-    for url, name, similarity in results:
+    for url, name, title, similarity in results:
         if name not in profs:
-            processed_results.append((url, name, similarity))
+            processed_results.append((url, name, title, similarity))
             profs.add(name)
-    processed_results.sort(key=lambda x: x[2], reverse=True)
+    processed_results.sort(key=lambda x: x[3], reverse=True)
 
     # pagination for results
     total_item_count = len(processed_results)
@@ -92,10 +96,11 @@ def search_engine(query, db, page_size=5):
                 end_index = page_number * page_size
                 page_data = processed_results[start_index:end_index]
                 print(f"Page: {page_number}")
-                for url, name, similarity in page_data:
+                for url, name, title, similarity in page_data:
                     print(f"URL: {url}")
-                    print(f"{name}")
-                    print(f"Cosine Similarity: {similarity}")
+                    print(f"Professor: {name}")
+                    print(f"Title: {title}")
+                    #print(f"Cosine Similarity: {similarity}")
                     print("\n")
             else:
                 print("Not a valid page number. Please try again.")
