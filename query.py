@@ -109,7 +109,8 @@ def search_engine(query, db, page_size=5):
             print("Invalid Input. Please enter a valid number.")
             print()
 
-client = MongoClient()
-db = client.searchengine
-query = input("Search query: ")
-search_engine(query, db)
+if __name__ == '__main__':
+    client = MongoClient()
+    db = client.searchengine
+    query = input("Search query: ")
+    search_engine(query, db)

@@ -9,6 +9,7 @@ import re
 def connectDataBase():
     client = MongoClient(host="localhost", port=27017)
     db = client.searchengine
+    
     return db, client
 
 """
@@ -28,7 +29,7 @@ def is_target_page(html):
     
     
 # Function to retrieve and store page in MongoDB
-def store_page(url, html):
+def store_page(url, html, pages_collection):
     # Store page in MongoDB: url, html
     pages_collection.insert_one({'url': url, 'html': html})
                        
@@ -62,7 +63,7 @@ class Frontier:
     def clear(self):
         self.queue.clear()
         
-def crawlerThread(frontier, num_targets):
+def crawlerThread(frontier, num_targets, pages_collection):
     targets_found = 0    
 
     while not frontier.done():
@@ -88,7 +89,7 @@ def crawlerThread(frontier, num_targets):
             print("Unknown Error")
             continue
         else:
-            store_page(url, html)
+            store_page(url, html, pages_collection)
 
             
 
@@ -106,23 +107,23 @@ def crawlerThread(frontier, num_targets):
             if (re.match("^https://www.cpp.edu", templink) == None):
                 templink = "https://www.cpp.edu" + templink
             frontier.add_url(templink)
-
-# Initialize Database
-db, client = connectDataBase()
-pages_collection = db.pages
-
-# Seed URLs for each department
-seed_urls = ['https://www.cpp.edu/cba/international-business-marketing/index.shtml']
+if __name__ == '__main__':
+    # Initialize Database
+    db, client = connectDataBase()
+    pages_collection = db.pages
     
-# Number of target faculty pages to find (this will be department-specific)
-num_targets = 22
-
-# Initialize frontier with seed URLs
-frontier = Frontier(seed_urls)
-
-# Start crawling
-crawlerThread(frontier, num_targets)
-
-# Close the MongoDB client when done
-client.close()
+    # Seed URLs for each department
+    seed_urls = ['https://www.cpp.edu/cba/international-business-marketing/index.shtml']
+        
+    # Number of target faculty pages to find (this will be department-specific)
+    num_targets = 22
+    
+    # Initialize frontier with seed URLs
+    frontier = Frontier(seed_urls)
+    
+    # Start crawling
+    crawlerThread(frontier, num_targets)
+    
+    # Close the MongoDB client when done
+    client.close()
 

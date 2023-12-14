@@ -18,7 +18,7 @@ try:
     db = client.searchengine
     pagecollection = db['pages']
     index = db['index']
-    print("connected")
+    #print("connected")
 except:
     print("Database not connected")
     
@@ -43,7 +43,7 @@ def deleteTerm(term):
 
 # Text transformation/parsing code  
 
-def textTransformation():
+def textTransformation(pagecollection, index):
     #queries the data base to find links that are need for this part
     query = {'url': {'$regex': "^https:\/\/www\.cpp\.edu\/faculty\/.*\/index\.shtml$"}}
 
