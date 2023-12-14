@@ -72,7 +72,7 @@ def search_engine(query, db, page_size=5):
     processed_results = []
     for url, name, similarity in results:
         if name not in profs:
-            processed_results.append((url, name, cosine_sim))
+            processed_results.append((url, name, similarity))
             profs.add(name)
     processed_results.sort(key=lambda x: x[2], reverse=True)
 
