@@ -106,23 +106,23 @@ def crawlerThread(frontier, num_targets):
             if (re.match("^https://www.cpp.edu", templink) == None):
                 templink = "https://www.cpp.edu" + templink
             frontier.add_url(templink)
-
-# Initialize Database
-db, client = connectDataBase()
-pages_collection = db.pages
-
-# Seed URLs for each department
-seed_urls = ['https://www.cpp.edu/cba/international-business-marketing/index.shtml']
+if __name__ == '__main__':
+    # Initialize Database
+    db, client = connectDataBase()
+    pages_collection = db.pages
     
-# Number of target faculty pages to find (this will be department-specific)
-num_targets = 22
-
-# Initialize frontier with seed URLs
-frontier = Frontier(seed_urls)
-
-# Start crawling
-crawlerThread(frontier, num_targets)
-
-# Close the MongoDB client when done
-client.close()
+    # Seed URLs for each department
+    seed_urls = ['https://www.cpp.edu/cba/international-business-marketing/index.shtml']
+        
+    # Number of target faculty pages to find (this will be department-specific)
+    num_targets = 22
+    
+    # Initialize frontier with seed URLs
+    frontier = Frontier(seed_urls)
+    
+    # Start crawling
+    crawlerThread(frontier, num_targets)
+    
+    # Close the MongoDB client when done
+    client.close()
 
