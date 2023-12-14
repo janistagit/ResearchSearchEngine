@@ -60,12 +60,13 @@ def textTransformation():
         docid = link['_id']
         html = link['html']
         bs = BeautifulSoup(html, 'html.parser')
+        aboutmepub = bs.find_all('div', class_='blurb')
         diva = bs.find_all('div', class_= 'accolades')
+        diva.extend(aboutmepub)
         for div in diva:
             t = div.get_text().replace('Â', '').replace(u'\xa0', '').replace('\n', ' ').replace('\t', '')
             cleantxt = re.sub(r'https?://[^\s,]+', '', t)
             cleantxt = re.sub(r'\b\w{3,}\.', lambda match: match.group(0)[:-1], cleantxt)  
-            cleantxt = re.sub(r'[a-z]{1,2}\.$', '', cleantxt)
             cleantxt = re.sub(r'(?<!\w)-|-(?!\w)', '', cleantxt)
             cleantxt = re.sub(r'[“”"(),*:&]', '', cleantxt)
             cleantxt = cleantxt.split()
