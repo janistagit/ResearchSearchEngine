@@ -8,6 +8,7 @@ if __name__ == '__main__':
     # Initialize Database
     db, client = connectDataBase()
     pages_collection = db.pages
+    index = db.index
 
     # Seed URLs for each department
     seed_urls = ['https://www.cpp.edu/cba/international-business-marketing/index.shtml']
@@ -26,7 +27,7 @@ if __name__ == '__main__':
     #client.close()
 
     # Parse text and insert terms into index
-    textTransformation()
+    textTransformation(pages_collection, index)
     print("Index creation complete!")
 
     print("")
