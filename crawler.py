@@ -9,6 +9,7 @@ import re
 def connectDataBase():
     client = MongoClient(host="localhost", port=27017)
     db = client.searchengine
+    
     return db, client
 
 """
@@ -28,7 +29,7 @@ def is_target_page(html):
     
     
 # Function to retrieve and store page in MongoDB
-def store_page(url, html):
+def store_page(url, html, pages_collection):
     # Store page in MongoDB: url, html
     pages_collection.insert_one({'url': url, 'html': html})
                        
@@ -62,7 +63,7 @@ class Frontier:
     def clear(self):
         self.queue.clear()
         
-def crawlerThread(frontier, num_targets):
+def crawlerThread(frontier, num_targets, pages_collection):
     targets_found = 0    
 
     while not frontier.done():
@@ -88,7 +89,7 @@ def crawlerThread(frontier, num_targets):
             print("Unknown Error")
             continue
         else:
-            store_page(url, html)
+            store_page(url, html, pages_collection)
 
             
 

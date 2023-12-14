@@ -1,14 +1,21 @@
-from crawler import *
-from webparser import *
-from query import *
+from crawler import connectDataBase, Frontier, crawlerThread
+from webparser import textTransformation
+from query import search_engine
+from pymongo import MongoClient
 
 # Driver program for search engine
 if __name__ == '__main__':
 
     # Initialize Database
-    db, client = connectDataBase()
-    pages_collection = db.pages
-    index = db.index
+    DB_HOST = 'localhost:27017'   
+    try:
+        client = MongoClient(host=[DB_HOST])
+        db = client.searchengine
+        pages_collection = db['pages']
+        index = db['index']
+        print("Connected...")
+    except:
+        print("Database not connected.")
 
     # Seed URLs for each department
     seed_urls = ['https://www.cpp.edu/cba/international-business-marketing/index.shtml']
@@ -20,7 +27,8 @@ if __name__ == '__main__':
     frontier = Frontier(seed_urls)
 
     # Start crawling
-    crawlerThread(frontier, num_targets)
+    print("Crawling web...")
+    crawlerThread(frontier, num_targets, pages_collection)
     print("\n\nCrawling complete!")
 
     # Close the MongoDB client when done
@@ -36,10 +44,10 @@ if __name__ == '__main__':
     print("# Press q to quit")
 
     query = ""
-    while query != ("q" | "Q"):
+    while query != ("q" or "Q"):
         query = input("Enter your query: ")
 
-        if query == ("q" | "Q"):
+        if query == ("q" or "Q"):
             print("Exiting search engine.")
 
         else:

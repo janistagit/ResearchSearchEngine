@@ -18,7 +18,7 @@ try:
     db = client.searchengine
     pagecollection = db['pages']
     index = db['index']
-    print("connected")
+    #print("connected")
 except:
     print("Database not connected")
     
